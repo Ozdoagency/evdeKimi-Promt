@@ -1,5 +1,4 @@
-
-import { sendTypingMessage, sendToGemini, generatePrompt, handleLongResponse, getNextQuestionWithEmotion } from './utils.js';
+import { getThinkingDelay, calculateTypingTime } from './utils.js';
 import dialogStages from './prompts.js';
 
 export async function askNextQuestion(chatId, userStages, bot, userMessage) {

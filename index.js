@@ -9,6 +9,7 @@ import { askNextQuestion } from './questionsHandler.js'; // Импорт фун�
 import { connectToMongoDB } from './mongodb.js'; // Импорт функции connectToMongoDB из mongodb.js
 import fs from 'fs'; // Импорт модуля fs для работы с файловой системой
 import path from 'path'; // Импорт модуля path для работы с путями файлов
+import { getThinkingDelay, calculateTypingTime } from './utils.js'; // Импорт утилит
 
 // Конфигурация
 const config = {
@@ -128,8 +129,8 @@ function delay(ms) {
 async function sendTypingMessage(chatId, text) {
   if (!text || text.trim() === '') return;
 
-  const typingDelay = 1000; // Задержка перед началом печати
-  const typingDuration = Math.min(text.length * 50, 5000); // Длительность печати (максимум 5 секунд)
+  const typingDelay = getThinkingDelay(); // Используем функцию для генерации случайной задержки
+  const typingDuration = calculateTypingTime(text); // Используем функцию для расчета времени печатания
 
   await bot.sendChatAction(chatId, 'typing');
   await delay(typingDelay);
@@ -177,7 +178,7 @@ async function sendCollectedDataToGroup(chatId) {
     await groupBot.sendMessage(config.GROUP_CHAT_ID, message);
     logger.info(`Данные успешно отправлены в группу для chatId: ${chatId}`);
   } catch (error) {
-    logger.error(`Ошибка при отправке данных в группу для chatId ${chatId}: ${error.message}`);
+    logger.error(`Ошибка при отправке д��нных в группу для chatId ${chatId}: ${error.message}`);
   }
 }
 
@@ -237,7 +238,7 @@ bot.onText(/\/start/, async (msg) => {
   const welcomeStage = dialogStages.questions.find(q => q.stage === "Приветствие и цель");
   const welcomeMessage = welcomeStage.text.replace('{name}', firstName);
 
-  logger.info(`Отправка приветственного сообщения для chatId: ${chatId}`);
+  logger.info(`Отправка приветственного со��бщения для chatId: ${chatId}`);
   await sendTypingMessage(chatId, welcomeMessage);
 
   // Отправка основного промпта
