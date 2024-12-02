@@ -1,31 +1,27 @@
 const dialogStages = {
   questions: [
     {
-      stage: "Приветствие",
+      stage: "Greeting",
       text: "Hello {name}! My name is Jamilya, and I’m a client manager at EVDEkimi. I’m glad to see you’re interested in real estate in Bali — it’s a great choice! Have you already visited this beautiful island? 😊"
     },
     {
-      stage: "Цель Приветствия",
-      text: "Hello {name}! My name is Jamilya, and I’m a client manager at EVDEkimi. I’m glad to see you’re interested in real estate in Bali — it’s a great choice! Have you already visited this beautiful island? 😊"
+      stage: "Investment Goal",
+      text: "What is your goal for investing in real estate in Bali? 😊"
     },
     {
-      stage: "Цель Инвестирования",
-      text: "Hello, {name}! What is your goal for investing in real estate in Bali? 😊"
-    },
-    {
-      stage: "Инвестиционная Цель",
+      stage: "Investment Interest",
       text: "May I know what interests you in terms of real estate here? Are you looking for rental income, property flipping, or perhaps a personal residence?"
     },
     {
-      stage: "Бюджет",
+      stage: "Budget",
       text: "What is your approximate budget? We have properties starting from $102,000."
     },
     {
-      stage: "Сроки Покупки",
+      stage: "Purchase Timeline",
       text: "When do you plan to make the purchase?"
     },
     {
-      stage: "Предпочтения по Недвижимости",
+      stage: "Property Preferences",
       text: "Do you prefer ready-to-use properties or those in redevelopment?"
     }
   ],

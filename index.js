@@ -1,43 +1,43 @@
-// Импорты
-import TelegramBot from 'node-telegram-bot-api'; // Импорт Telegram Bot API
-import express from 'express'; // Импорт Express
-import bodyParser from 'body-parser'; // Импорт Body Parser
-import winston from 'winston'; // Импорт Winston для логирования
-import { GoogleGenerativeAI } from "@google/generative-ai"; // Импорт Google Generative AI
-import dialogStages from './prompts.js'; // Импорт этапов диалога из prompts.js
-import { askNextQuestion } from './questionsHandler.js'; // Импорт функции askNextQuestion из questionsHandler.js
-import { connectToMongoDB } from './mongodb.js'; // Импорт функции connectToMongoDB из mongodb.js
-import fs from 'fs'; // Импорт модуля fs для работы с файловой системой
-import path from 'path'; // Импорт модуля path для работы с путями файлов
-import { getThinkingDelay, calculateTypingTime } from './utils.js'; // Импорт утилит
+// Imports
+import TelegramBot from 'node-telegram-bot-api'; // Import Telegram Bot API
+import express from 'express'; // Import Express
+import bodyParser from 'body-parser'; // Import Body Parser
+import winston from 'winston'; // Import Winston for logging
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Import Google Generative AI
+import dialogStages from './prompts.js'; // Import dialog stages from prompts.js
+import { askNextQuestion } from './questionsHandler.js'; // Import askNextQuestion function from questionsHandler.js
+import { connectToMongoDB } from './mongodb.js'; // Import connectToMongoDB function from mongodb.js
+import fs from 'fs'; // Import fs module for file system operations
+import path from 'path'; // Import path module for file paths
+import { getThinkingDelay, calculateTypingTime } from './utils.js'; // Import utilities
 import { getNextQuestionWithEmotion } from './utils.js';
 
-// Конфигурация
+// Configuration
 const config = {
-  TELEGRAM_TOKEN: process.env.TELEGRAM_TOKEN || 'Ваш_Telegram_Token',
-  WEBHOOK_URL: process.env.WEBHOOK_URL || 'Ваш_Webhook_Url',
-  GEMINI_API_KEY: process.env.GEMINI_API_KEY || 'Ваш_Gemini_API_Key',
+  TELEGRAM_TOKEN: process.env.TELEGRAM_TOKEN || 'Your_Telegram_Token',
+  WEBHOOK_URL: process.env.WEBHOOK_URL || 'Your_Webhook_Url',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY || 'Your_Gemini_API_Key',
   GEMINI_API_URL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
   MAX_TELEGRAM_MESSAGE_LENGTH: 4096,
   ADMIN_ID: process.env.ADMIN_ID || null,
   REQUEST_LIMIT: 5,
   REQUEST_WINDOW: 60000,
-  PORT: process.env.PORT || 8443, // Изменен порт на 8443
-  GROUP_CHAT_ID: process.env.GROUP_CHAT_ID || '-4522204925', // Убедитесь, что это правильный ID группы
+  PORT: process.env.PORT || 8443, // Changed port to 8443
+  GROUP_CHAT_ID: process.env.GROUP_CHAT_ID || '-4522204925', // Ensure this is the correct group ID
   BOT_TOKEN: process.env.TELEGRAM_TOKEN || '2111920825:AAGVeO134IP43jQdU9GNQRJw0gUcJPocqaU',
 };
 
-// Инициализация GoogleGenerativeAI
+// Initialize GoogleGenerativeAI
 const genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-// Инициализация Telegram Bot
+// Initialize Telegram Bot
 const bot = new TelegramBot(config.TELEGRAM_TOKEN, { webHook: true });
 bot.setWebHook(`${config.WEBHOOK_URL}/bot${config.TELEGRAM_TOKEN}`)
-  .then(() => logger.info('Webhook успешно установлен'))
-  .catch(error => logger.error(`Ошибка при установке webhook: ${error.message}`));
+  .then(() => logger.info('Webhook successfully set'))
+  .catch(error => logger.error(`Error setting webhook: ${error.message}`));
 
-// Логирование с помощью Winston
+// Logging with Winston
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
@@ -50,15 +50,15 @@ const logger = winston.createLogger({
   ],
 });
 
-// Глобальные переменные
+// Global variables
 const userHistories = {};
 const userRequestTimestamps = {};
-let userStages = {}; // Хранение текущего этапа для каждого пользователя
+let userStages = {}; // Store the current stage for each user
 
-// Подключение к MongoDB
+// Connect to MongoDB
 connectToMongoDB();
 
-// Функция для чтения текста из файла
+// Function to read text from a file
 import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -68,74 +68,74 @@ function get_file_text(filename) {
   return fs.readFileSync(filePath, 'utf8');
 }
 
-// Чтение основного промпта из файла
+// Read the base prompt from a file
 const basePrompt = get_file_text('BasePrompt.txt');
 
-// Завершение процесса квалификации
+// Complete the qualification process
 function completeQualification(chatId) {
   const message = get_file_text('Qualified, answered all questions.txt');
   bot.sendMessage(chatId, message);
   sendCollectedDataToGroup(chatId);
 }
 
-// Частичная квалификация
+// Partial qualification
 function partialQualification(chatId) {
   const message = get_file_text('Partially qualified, needs follow-up.txt');
   bot.sendMessage(chatId, message);
   sendCollectedDataToGroup(chatId);
 }
 
-// Обработка отказа клиента от дальнейшего взаимодействия
+// Handle client declined interaction
 function clientDeclinedInteraction(chatId) {
   const message = get_file_text('Client declined further interaction.txt');
   bot.sendMessage(chatId, message);
 }
 
-// Обработка запроса информации о компании
+// Handle company info request
 function sendCompanyInfo(chatId) {
   const message = get_file_text('About Company EvdeKimi.txt');
   bot.sendMessage(chatId, message);
 }
 
-// Обработка запроса каталога
+// Handle catalog request
 function handleCatalogRequest(chatId) {
   const message = get_file_text('If the client requests a catalog.txt');
   bot.sendMessage(chatId, message);
 }
 
-// **Функция sendToGemini**
+// **Function sendToGemini**
 async function sendToGemini(prompt, chatId) {
   try {
-    logger.info(`Отправка запроса в Gemini API от chatId ${chatId}: "${prompt}"`);
+    logger.info(`Sending request to Gemini API from chatId ${chatId}: "${prompt}"`);
     const result = await model.generateContent(prompt);
 
-    logger.info(`Полный ответ от Gemini API для chatId ${chatId}: ${JSON.stringify(result)}`);
+    logger.info(`Full response from Gemini API for chatId ${chatId}: ${JSON.stringify(result)}`);
 
     if (result.response && result.response.candidates && result.response.candidates.length > 0) {
-      const reply = result.response.candidates[0].content.parts[0].text || 'Ответ отсутствует.';
-      logger.info(`Ответ от Gemini API для chatId ${chatId}: "${reply}"`);
+      const reply = result.response.candidates[0].content.parts[0].text || 'No response.';
+      logger.info(`Response from Gemini API for chatId ${chatId}: "${reply}"`);
       return reply;
     } else {
-      logger.warn(`Gemini API не вернул кандидатов для chatId ${chatId}.`);
-      return 'Извините, я не смог обработать ваш запрос. Gemini API не вернул текст.';
+      logger.warn(`Gemini API did not return candidates for chatId ${chatId}.`);
+      return 'Sorry, I could not process your request. Gemini API did not return text.';
     }
   } catch (error) {
-    logger.error(`Ошибка Gemini API для chatId ${chatId}: ${error.message}`);
-    throw new Error(`Произошла ошибка при обработке запроса: ${error.message}`);
+    logger.error(`Gemini API error for chatId ${chatId}: ${error.message}`);
+    throw new Error(`An error occurred while processing the request: ${error.message}`);
   }
 }
 
-// **Функция задержки**
+// **Delay function**
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// **Функция имитации печати сообщений**
+// **Function to simulate typing messages**
 async function sendTypingMessage(chatId, text) {
   if (!text || text.trim() === '') return;
 
-  const typingDelay = getThinkingDelay(); // Используем функцию для генерации случайной задержки
-  const typingDuration = calculateTypingTime(text); // Используем функцию для расчета времени печатания
+  const typingDelay = getThinkingDelay(); // Use function to generate random delay
+  const typingDuration = calculateTypingTime(text); // Use function to calculate typing time
 
   await bot.sendChatAction(chatId, 'typing');
   await delay(typingDelay);
@@ -154,21 +154,21 @@ async function sendTypingMessage(chatId, text) {
   }
 }
 
-// **Функция отправки сообщений с использованием ИИ**
+// **Function to send messages using AI**
 async function sendAIResponse(chatId, userMessage) {
   const prompt = generatePrompt(userMessage, chatId);
   const aiResponse = await sendToGemini(prompt, chatId);
   await sendTypingMessage(chatId, aiResponse);
 }
 
-// **Функция отправки сообщений**
+// **Function to send messages**
 async function sendMessage(chatId, text) {
   if (!text || text.trim() === '') return;
 
   const MAX_LENGTH = config.MAX_TELEGRAM_MESSAGE_LENGTH;
   const messages = [];
 
-  for (let i = 0; i < text.length; i += MAX_LENGTH) { // Исправлен цикл
+  for (let i = 0; text.length; i += MAX_LENGTH) { // Fixed loop
     messages.push(text.substring(i, i + MAX_LENGTH));
   }
 
@@ -177,36 +177,36 @@ async function sendMessage(chatId, text) {
   }
 }
 
-// **Функция отправки данных в группу**
+// **Function to send collected data to group**
 async function sendCollectedDataToGroup(chatId) {
   const userHistory = userHistories[chatId];
   if (!userHistory) return;
 
   const collectedData = userHistory.map(entry => `${entry.stage}: ${entry.response}`).join('\n');
-  const message = `Собранные данные:\n${collectedData}`;
+  const message = `Collected data:\n${collectedData}`;
 
   try {
     const groupBot = new TelegramBot(config.BOT_TOKEN);
     await groupBot.sendMessage(config.GROUP_CHAT_ID, message);
-    logger.info(`Данные успешно отправлены в группу для chatId: ${chatId}`);
+    logger.info(`Data successfully sent to group for chatId: ${chatId}`);
   } catch (error) {
-    logger.error(`Ошибка при отправке данных в группу для chatId ${chatId}: ${error.message}`);
+    logger.error(`Error sending data to group for chatId ${chatId}: ${error.message}`);
   }
 }
 
-// **Функция генерации промпта для Gemini API**
+// **Function to generate prompt for Gemini API**
 function generatePrompt(userMessage, chatId) {
   const userHistory = userHistories[chatId] || [];
-  const context = userHistory.map(entry => `Пользователь: ${entry.response}\нИИ: ${entry.reply}`).join('\н');
-  return `${basePrompt}\н${context}\нПользователь: ${userMessage}\нИИ:`;
+  const context = userHistory.map(entry => `User: ${entry.response}\nAI: ${entry.reply}`).join('\n');
+  return `${basePrompt}\n${context}\nUser: ${userMessage}\nAI:`;
 }
 
-// **Функция обработки длинных ответов**
+// **Function to handle long responses**
 async function handleLongResponse(chatId, response) {
   const MAX_LENGTH = config.MAX_TELEGRAM_MESSAGE_LENGTH;
   const messages = [];
 
-  for (let i = 0; i < response.length; i += MAX_LENGTH) { // Исправлен цикл
+  for (let i = 0; i < response.length; i += MAX_LENGTH) { // Fixed loop
     messages.push(response.substring(i, i + MAX_LENGTH));
   }
 
@@ -215,13 +215,13 @@ async function handleLongResponse(chatId, response) {
   }
 }
 
-// **Обработка команды /start**
+// **Handle /start command**
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const firstName = msg.from.first_name || '';
-  logger.info(`Получена команда /start от chatId: ${chatId}`);
+  logger.info(`Received /start command from chatId: ${chatId}`);
 
-  // Инициализация данных пользователя
+  // Initialize user data
   userStages[chatId] = {
     stage: 0,
     data: {
@@ -237,34 +237,34 @@ bot.onText(/\/start/, async (msg) => {
   userHistories[chatId] = [];
   userRequestTimestamps[chatId] = { count: 0, timestamp: Date.now() };
 
-  // Получаем приветственное сообщение из dialogStages и подставляем имя
-  const welcomeStage = dialogStages.questions.find(q => q.stage === "Приветствие");
+  // Get welcome message from dialogStages and insert name
+  const welcomeStage = dialogStages.questions.find(q => q.stage === "Greeting");
   if (!welcomeStage) {
-    logger.error(`Этап "Приветствие" не найден в dialogStages`);
-    await sendTypingMessage(chatId, "Извините, произошла ошибка. Пожалуйста, попробуйте еще раз или начните сначала с команды /start");
+    logger.error(`Stage "Greeting" not found in dialogStages`);
+    await sendTypingMessage(chatId, "Sorry, an error occurred. Please try again or start over with the /start command");
     return;
   }
   const welcomeMessage = welcomeStage.text.replace('{name}', firstName);
 
-  logger.info(`Отправка приветственного сообщения для chatId: ${chatId}`);
+  logger.info(`Sending welcome message to chatId: ${chatId}`);
   await sendTypingMessage(chatId, welcomeMessage);
 
-  // Отправка основного промпта
+  // Send base prompt
   await sendTypingMessage(chatId, basePrompt);
 });
 
-// **Обработка текстовых сообщений**
+// **Handle text messages**
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const userMessage = msg.text;
   
   try {
-    // Игнорируем команды и пустые сообщения
+    // Ignore commands and empty messages
     if (!userMessage || userMessage.startsWith('/')) return;
 
-    logger.info(`Получено сообщение от chatId: ${chatId}, текст: ${userMessage}`);
+    logger.info(`Received message from chatId: ${chatId}, text: ${userMessage}`);
 
-    // Проверка и инициализация состояния пользователя
+    // Check and initialize user state
     if (!userStages[chatId]) {
       userStages[chatId] = {
         stage: 0,
@@ -281,11 +281,11 @@ bot.on('message', async (msg) => {
 
     const currentStage = dialogStages.questions[userStages[chatId].stage];
     if (!currentStage) {
-      logger.warn(`Неверный этап диалога для chatId ${chatId}`);
+      logger.warn(`Invalid dialog stage for chatId ${chatId}`);
       return;
     }
 
-    // Сохранение ответа пользователя
+    // Save user response
     userHistories[chatId] = userHistories[chatId] || [];
     userHistories[chatId].push({
       stage: currentStage.stage,
@@ -293,13 +293,13 @@ bot.on('message', async (msg) => {
       timestamp: Date.now()
     });
 
-    // Обработка следующего этапа
+    // Handle next stage
     await askNextQuestion(chatId, userStages, bot, userMessage);
 
-    // Генерация и отправка ответа ИИ
+    // Generate and send AI response
     await sendAIResponse(chatId, userMessage);
 
-    // Проверка завершения квалификации
+    // Check qualification completion
     const userStageData = userStages[chatId].data;
     const answeredQuestions = Object.values(userStageData).filter(answer => answer !== null).length;
 
@@ -309,12 +309,12 @@ bot.on('message', async (msg) => {
       partialQualification(chatId);
     }
   } catch (error) {
-    logger.error(`Ошибка при обработке сообщения от chatId ${chatId}: ${error.message}`);
-    await sendTypingMessage(chatId, "Извините, произошла ошибка. Пожалуйста, попробуйте еще раз или начните сначала с команды /start");
+    logger.error(`Error processing message from chatId ${chatId}: ${error.message}`);
+    await sendTypingMessage(chatId, "Sorry, an error occurred. Please try again or start over with the /start command");
   }
 });
 
-// **Express-сервер**
+// **Express server**
 const app = express();
 app.use(bodyParser.json());
 
@@ -323,15 +323,15 @@ app.post(`/bot${config.TELEGRAM_TOKEN}`, (req, res) => {
     bot.processUpdate(req.body);
     res.sendStatus(200);
   } catch (error) {
-    logger.error(`Ошибка Webhook: ${error.message}`);
+    logger.error(`Webhook error: ${error.message}`);
     res.sendStatus(500);
   }
 });
 
 app.get('/', (req, res) => {
-  res.send('Сервер работает! 🚀');
+  res.send('Server is running! 🚀');
 });
 
 app.listen(config.PORT, () => {
-  logger.info(`Сервер запущен на порту ${config.PORT}`);
+  logger.info(`Server started on port ${config.PORT}`);
 });
