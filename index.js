@@ -58,6 +58,10 @@ let userStages = {}; // Хранение текущего этапа для ка
 connectToMongoDB();
 
 // Функция для чтения текста из файла
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 function get_file_text(filename) {
   const filePath = path.join(__dirname, filename);
   return fs.readFileSync(filePath, 'utf8');
@@ -178,7 +182,7 @@ async function sendCollectedDataToGroup(chatId) {
     await groupBot.sendMessage(config.GROUP_CHAT_ID, message);
     logger.info(`Данные успешно отправлены в группу для chatId: ${chatId}`);
   } catch (error) {
-    logger.error(`Ошибка при отправке д��нных в группу для chatId ${chatId}: ${error.message}`);
+    logger.error(`Ошибка при отправке данных в группу для chatId ${chatId}: ${error.message}`);
   }
 }
 
@@ -194,7 +198,7 @@ async function handleLongResponse(chatId, response) {
   const MAX_LENGTH = config.MAX_TELEGRAM_MESSAGE_LENGTH;
   const messages = [];
 
-  for (let i = 0; i < response.length; i += MAX_LENGTH) { // Исправлен цикл
+  for (let i = 0; i < response.length; i += MAX_LENGTH) { // И��правлен цикл
     messages.push(response.substring(i, i + MAX_LENGTH));
   }
 
@@ -234,11 +238,11 @@ bot.onText(/\/start/, async (msg) => {
   userHistories[chatId] = [];
   userRequestTimestamps[chatId] = { count: 0, timestamp: Date.now() };
 
-  // Получаем приветственное сообщение из dialogStages и подставляем имя
+  // Получаем приветс��венное сообщение из dialogStages и подставляем имя
   const welcomeStage = dialogStages.questions.find(q => q.stage === "Приветствие и цель");
   const welcomeMessage = welcomeStage.text.replace('{name}', firstName);
 
-  logger.info(`Отправка приветственного со��бщения для chatId: ${chatId}`);
+  logger.info(`Отправка приветственного сообщения для chatId: ${chatId}`);
   await sendTypingMessage(chatId, welcomeMessage);
 
   // Отправка основного промпта
