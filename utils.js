@@ -15,3 +15,11 @@ export const calculateTypingTime = (text) => {
 export function someUtilityFunction() {
   // ...реализация утилиты...
 }
+
+export async function getNextQuestionWithEmotion(stage, userMessage, chatId) {
+  const prompt = `Пользователь: ${userMessage}\нИИ:`;
+  const aiResponse = await sendToGemini(prompt, chatId);
+
+  const randomText = Array.isArray(stage.text) ? stage.text[Math.floor(Math.random() * stage.text.length)] : stage.text;
+  return `${aiResponse} ${randomText}`;
+}

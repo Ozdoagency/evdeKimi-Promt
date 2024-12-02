@@ -10,6 +10,7 @@ import { connectToMongoDB } from './mongodb.js'; // Импорт функции 
 import fs from 'fs'; // Импорт модуля fs для работы с файловой системой
 import path from 'path'; // Импорт модуля path для работы с путями файлов
 import { getThinkingDelay, calculateTypingTime } from './utils.js'; // Импорт утилит
+import { getNextQuestionWithEmotion } from './utils.js';
 
 // Конфигурация
 const config = {
@@ -153,6 +154,13 @@ async function sendTypingMessage(chatId, text) {
   }
 }
 
+// **Функция отправки сообщений с использованием ИИ**
+async function sendAIResponse(chatId, userMessage) {
+  const prompt = generatePrompt(userMessage, chatId);
+  const aiResponse = await sendToGemini(prompt, chatId);
+  await sendTypingMessage(chatId, aiResponse);
+}
+
 // **Функция отправки сообщений**
 async function sendMessage(chatId, text) {
   if (!text || text.trim() === '') return;
@@ -190,7 +198,7 @@ async function sendCollectedDataToGroup(chatId) {
 function generatePrompt(userMessage, chatId) {
   const userHistory = userHistories[chatId] || [];
   const context = userHistory.map(entry => `Пользователь: ${entry.response}\нИИ: ${entry.reply}`).join('\н');
-  return `${context}\нПользователь: ${userMessage}\нИИ:`;
+  return `${basePrompt}\н${context}\нПользователь: ${userMessage}\нИИ:`;
 }
 
 // **Функция обработки длинных ответов**
@@ -198,7 +206,7 @@ async function handleLongResponse(chatId, response) {
   const MAX_LENGTH = config.MAX_TELEGRAM_MESSAGE_LENGTH;
   const messages = [];
 
-  for (let i = 0; i < response.length; i += MAX_LENGTH) { // И��правлен цикл
+  for (let i = 0; i < response.length; i += MAX_LENGTH) { // Исправлен цикл
     messages.push(response.substring(i, i + MAX_LENGTH));
   }
 
@@ -238,8 +246,8 @@ bot.onText(/\/start/, async (msg) => {
   userHistories[chatId] = [];
   userRequestTimestamps[chatId] = { count: 0, timestamp: Date.now() };
 
-  // Получаем приветс��венное сообщение из dialogStages и подставляем имя
-  const welcomeStage = dialogStages.questions.find(q => q.stage === "Приветствие и цель");
+  // Получаем приветственное сообщение из dialogStages и подставляем имя
+  const welcomeStage = dialogStages.questions.find(q => q.stage === "Приветствие");
   const welcomeMessage = welcomeStage.text.replace('{name}', firstName);
 
   logger.info(`Отправка приветственного сообщения для chatId: ${chatId}`);
@@ -291,6 +299,9 @@ bot.on('message', async (msg) => {
 
     // Обработка следующего этапа
     await askNextQuestion(chatId, userStages, bot, userMessage);
+
+    // Генерация и отправка ответа ИИ
+    await sendAIResponse(chatId, userMessage);
 
     // Проверка завершения квалификации
     const userStageData = userStages[chatId].data;
