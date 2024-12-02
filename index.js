@@ -104,7 +104,7 @@ function handleCatalogRequest(chatId) {
 }
 
 // **Function sendToGemini**
-async function sendToGemini(prompt, chatId) {
+export async function sendToGemini(prompt, chatId) {
   try {
     logger.info(`Sending request to Gemini API from chatId ${chatId}: "${prompt}"`);
     const result = await model.generateContent(prompt);

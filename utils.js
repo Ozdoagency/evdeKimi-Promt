@@ -1,3 +1,5 @@
+import { sendToGemini } from './index.js'; // Импорт функции sendToGemini
+
 // Генерация случайной задержки для эффекта "печатания" (от 3 до 6 секунд)
 export const getThinkingDelay = () => {
   return Math.floor(Math.random() * (6000 - 3000 + 1)) + 3000; // Увеличена задержка перед "печатанием"
@@ -23,7 +25,7 @@ export function generatePrompt(userMessage, chatId) {
 }
 
 export async function getNextQuestionWithEmotion(stage, userMessage, chatId) {
-  const prompt = `Пользователь: ${userMessage}\нИИ:`;
+  const prompt = `User: ${userMessage}\nAI:`;
   const aiResponse = await sendToGemini(prompt, chatId);
 
   const randomText = Array.isArray(stage.text) ? stage.text[Math.floor(Math.random() * stage.text.length)] : stage.text;
