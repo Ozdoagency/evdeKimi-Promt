@@ -16,6 +16,12 @@ export function someUtilityFunction() {
   // ...реализация утилиты...
 }
 
+export function generatePrompt(userMessage, chatId) {
+  const userHistory = userHistories[chatId] || [];
+  const context = userHistory.map(entry => `User: ${entry.response}\nAI: ${entry.reply}`).join('\n');
+  return `${basePrompt}\n${context}\nUser: ${userMessage}\nAI:`;
+}
+
 export async function getNextQuestionWithEmotion(stage, userMessage, chatId) {
   const prompt = `Пользователь: ${userMessage}\нИИ:`;
   const aiResponse = await sendToGemini(prompt, chatId);

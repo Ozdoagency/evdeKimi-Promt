@@ -248,9 +248,6 @@ bot.onText(/\/start/, async (msg) => {
 
   logger.info(`Sending welcome message to chatId: ${chatId}`);
   await sendTypingMessage(chatId, welcomeMessage);
-
-  // Send base prompt
-  await sendTypingMessage(chatId, basePrompt);
 });
 
 // **Handle text messages**
