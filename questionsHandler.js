@@ -5,7 +5,7 @@ import { sendTypingMessage } from './index.js'; // Импорт функции s
 export async function askNextQuestion(chatId, userStages, bot, userMessage) {
   const currentStage = dialogStages.questions[userStages[chatId].stage];
   if (!currentStage) {
-    logger.warn(`Неверный этап диалога для chatId ${chatId}`);
+    logger.warn(`Invalid dialog stage for chatId ${chatId}`);
     return;
   }
 
