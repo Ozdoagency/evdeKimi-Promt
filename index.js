@@ -78,7 +78,7 @@ function completeQualification(chatId) {
   sendCollectedDataToGroup(chatId);
 }
 
-// Ч��стичная квалификация
+// Частичная квалификация
 function partialQualification(chatId) {
   const message = get_file_text('Partially qualified, needs follow-up.txt');
   bot.sendMessage(chatId, message);
@@ -239,6 +239,11 @@ bot.onText(/\/start/, async (msg) => {
 
   // Получаем приветственное сообщение из dialogStages и подставляем имя
   const welcomeStage = dialogStages.questions.find(q => q.stage === "Приветствие");
+  if (!welcomeStage) {
+    logger.error(`Этап "Приветствие" не найден в dialogStages`);
+    await sendTypingMessage(chatId, "Извините, произошла ошибка. Пожалуйста, попробуйте еще раз или начните сначала с команды /start");
+    return;
+  }
   const welcomeMessage = welcomeStage.text.replace('{name}', firstName);
 
   logger.info(`Отправка приветственного сообщения для chatId: ${chatId}`);
