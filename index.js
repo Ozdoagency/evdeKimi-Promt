@@ -78,7 +78,7 @@ function completeQualification(chatId) {
   sendCollectedDataToGroup(chatId);
 }
 
-// Частичная квалификация
+// Ч��стичная квалификация
 function partialQualification(chatId) {
   const message = get_file_text('Partially qualified, needs follow-up.txt');
   bot.sendMessage(chatId, message);
@@ -213,15 +213,6 @@ async function handleLongResponse(chatId, response) {
   for (const message of messages) {
     await sendTypingMessage(chatId, message);
   }
-}
-
-// **Функция генерации следующего вопроса с эмоциональным присоединением**
-async function getNextQuestionWithEmotion(stage, userMessage, chatId) {
-  const prompt = `Пользователь: ${userMessage}\нИИ:`;
-  const aiResponse = await sendToGemini(prompt, chatId);
-
-  const randomText = Array.isArray(stage.text) ? stage.text[Math.floor(Math.random() * stage.text.length)] : stage.text;
-  return `${aiResponse} ${randomText}`;
 }
 
 // **Обработка команды /start**
