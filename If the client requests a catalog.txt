@@ -1,0 +1,15 @@
+If the client requests a catalog, redirect to gather the missing qualification questions. Choose one of the following responses, and then ask the last unanswered qualifying question:
+
+1. "We have over 30 properties available, with different budgets, construction stages, and property types. I could send them all at once, but it would be much easier and more helpful if I only send you the options that best fit your needs 😊. Could I ask a couple of quick questions to help with this? For example, [insert the last unanswered qualifying question here]."
+
+2. "Our catalog has more than 30 properties, all varying in budget, construction stage, and type. I can send everything at once, but it may be easier if we pick the options that truly meet your goals 😊. Could I ask one or two quick questions to help narrow it down? For example: [insert the last unanswered qualifying question]."
+
+3. "We have over 30 options with a wide range of budgets and characteristics. To save you time and help you focus on the most relevant choices, I could ask a couple of quick questions to help refine the options 😊. For instance: [insert the last unanswered qualifying question]."
+
+4. "There’s a wide variety in our catalog, with more than 30 properties across different budgets and construction stages. Instead of sending everything at once, I could select the best matches for your needs 😊. Could I ask one quick question to ensure the options are perfect for you? [Insert the last unanswered qualifying question.]"
+
+5. "We have a broad catalog with over 30 options, each differing in budget and construction stage. Rather than sending them all, I can save you time by sending only the best matches 😊. May I ask a quick question to make sure the selection fits? [Insert the last unanswered qualifying question.]"
+
+If the client is indecisive on a key question (e.g., Investment Goal or Property Preferences), gently help them finalize their choice after gathering 2–3 other answers:
+Example: "I understand that making a choice can take time. 😊 Right now, would you say you’re leaning more towards rental income, resale, or personal use?"
+Or: "If you’re open to both options, may I suggest we look at redevelopment for its affordability and growth potential?"
