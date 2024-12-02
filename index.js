@@ -1,14 +1,14 @@
 // Импорты
-import TelegramBot from 'node-telegram-bot-api';
-import express from 'express';
-import bodyParser from 'body-parser';
-import winston from 'winston';
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import dialogStages from './prompts.js';
-import { askNextQuestion } from './questionsHandler.js';
-import { connectToMongoDB } from './mongodb.js';
-import fs from 'fs';
-import path from 'path';
+import TelegramBot from 'node-telegram-bot-api'; // Импорт Telegram Bot API
+import express from 'express'; // Импорт Express
+import bodyParser from 'body-parser'; // Импорт Body Parser
+import winston from 'winston'; // Импорт Winston для логирования
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Импорт Google Generative AI
+import dialogStages from './prompts.js'; // Импорт этапов диалога из prompts.js
+import { askNextQuestion } from './questionsHandler.js'; // Импорт функции askNextQuestion из questionsHandler.js
+import { connectToMongoDB } from './mongodb.js'; // Импорт функции connectToMongoDB из mongodb.js
+import fs from 'fs'; // Импорт модуля fs для работы с файловой системой
+import path from 'path'; // Импорт модуля path для работы с путями файлов
 
 // Конфигурация
 const config = {
@@ -55,6 +55,47 @@ let userStages = {}; // Хранение текущего этапа для ка
 
 // Подключение к MongoDB
 connectToMongoDB();
+
+// Функция для чтения текста из файла
+function get_file_text(filename) {
+  const filePath = path.join(__dirname, filename);
+  return fs.readFileSync(filePath, 'utf8');
+}
+
+// Чтение основного промпта из файла
+const basePrompt = get_file_text('BasePrompt.txt');
+
+// Завершение процесса квалификации
+function completeQualification(chatId) {
+  const message = get_file_text('Qualified, answered all questions.txt');
+  bot.sendMessage(chatId, message);
+  sendCollectedDataToGroup(chatId);
+}
+
+// Частичная квалификация
+function partialQualification(chatId) {
+  const message = get_file_text('Partially qualified, needs follow-up.txt');
+  bot.sendMessage(chatId, message);
+  sendCollectedDataToGroup(chatId);
+}
+
+// Обработка отказа клиента от дальнейшего взаимодействия
+function clientDeclinedInteraction(chatId) {
+  const message = get_file_text('Client declined further interaction.txt');
+  bot.sendMessage(chatId, message);
+}
+
+// Обработка запроса информации о компании
+function sendCompanyInfo(chatId) {
+  const message = get_file_text('About Company EvdeKimi.txt');
+  bot.sendMessage(chatId, message);
+}
+
+// Обработка запроса каталога
+function handleCatalogRequest(chatId) {
+  const message = get_file_text('If the client requests a catalog.txt');
+  bot.sendMessage(chatId, message);
+}
 
 // **Функция sendToGemini**
 async function sendToGemini(prompt, chatId) {
@@ -136,7 +177,7 @@ async function sendCollectedDataToGroup(chatId) {
     await groupBot.sendMessage(config.GROUP_CHAT_ID, message);
     logger.info(`Данные успешно отправлены в группу для chatId: ${chatId}`);
   } catch (error) {
-    logger.error(`Ошибка при отпр��вке данных в группу для chatId ${chatId}: ${error.message}`);
+    logger.error(`Ошибка при отправке данных в группу для chatId ${chatId}: ${error.message}`);
   }
 }
 
@@ -170,37 +211,11 @@ async function getNextQuestionWithEmotion(stage, userMessage, chatId) {
   return `${aiResponse} ${randomText}`;
 }
 
-// Функция для чтения текста из файла
-function get_file_text(filename) {
-  const filePath = path.join(__dirname, filename);
-  return fs.readFileSync(filePath, 'utf8');
-}
-
-// Завершение процесса квалификации
-function completeQualification(chatId) {
-  const message = get_file_text('Qualified, answered all questions.txt');
-  bot.sendMessage(chatId, message);
-  sendCollectedDataToGroup(chatId);
-}
-
-// Частичная квалификация
-function partialQualification(chatId) {
-  const message = get_file_text('Partially qualified, needs follow-up.txt');
-  bot.sendMessage(chatId, message);
-  sendCollectedDataToGroup(chatId);
-}
-
-// Обработка отказа клиента от дальнейшего взаимодействия
-function clientDeclinedInteraction(chatId) {
-  const message = get_file_text('Client declined further interaction.txt');
-  bot.sendMessage(chatId, message);
-}
-
 // **Обработка команды /start**
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const firstName = msg.from.first_name || '';
-  logger.info(`��олучена команда /start от chatId: ${chatId}`);
+  logger.info(`Получена команда /start от chatId: ${chatId}`);
 
   // Инициализация данных пользователя
   userStages[chatId] = {
@@ -224,6 +239,9 @@ bot.onText(/\/start/, async (msg) => {
 
   logger.info(`Отправка приветственного сообщения для chatId: ${chatId}`);
   await sendTypingMessage(chatId, welcomeMessage);
+
+  // Отправка основного промпта
+  await sendTypingMessage(chatId, basePrompt);
 });
 
 // **Обработка текстовых сообщений**
