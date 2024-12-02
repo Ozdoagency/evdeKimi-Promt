@@ -131,7 +131,7 @@ function delay(ms) {
 }
 
 // **Function to simulate typing messages**
-async function sendTypingMessage(chatId, text) {
+export async function sendTypingMessage(chatId, text) {
   if (!text || text.trim() === '') return;
 
   const typingDelay = getThinkingDelay(); // Use function to generate random delay
