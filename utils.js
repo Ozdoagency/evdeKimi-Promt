@@ -25,7 +25,7 @@ export function generatePrompt(userMessage, chatId) {
 }
 
 export async function getNextQuestionWithEmotion(stage, userMessage, chatId) {
-  const prompt = `User: ${userMessage}\nAI:`;
+  const prompt = generatePrompt(userMessage, chatId);
   const aiResponse = await sendToGemini(prompt, chatId);
 
   const randomText = Array.isArray(stage.text) ? stage.text[Math.floor(Math.random() * stage.text.length)] : stage.text;
